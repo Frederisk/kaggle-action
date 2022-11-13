@@ -76,7 +76,7 @@ runs:
 
         [String]$jsonPath = [Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
-        # $metadata[''] = '${{ inputs. }}';
+        # $metadata[''] = '$#{{ inputs. }}';
         $metadata['id'] = $metadata[id].Split('/')[0] + '/' + '${{ inputs.title }}';
         $metadata['title'] = '${{ inputs.title }}';
         $metadata['code_file'] = '${{ github.workspace }}' + '${{ inputs.code_file }}';
@@ -106,7 +106,10 @@ runs:
             # [String]$fullMessage = (kaggle kernels output $kernelName -p $kernelName 2>&1) -join [Environment]::NewLine;
             kaggle kernels output $kernelName -p $kernelName;
             [String]$fullMessage = (Get-Content -Path ([Path]::Combine($kernelName, $kernelName + '.log')) -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
-            [String]$exceptMessage = 'FAIL: Test(s) failed. Full logs below:' + ([Environment]::NewLine * 2) + $fullMessage;
+            [String]$exceptMessage = 'FAIL: Test(s) failed. Full logs below:' + [Environment]::NewLine
+            + '::group::Full log' + [Environment]::NewLine
+            + $fullMessage + [Environment]::NewLine
+            + '::endgroup::';
             throw [Exception]::new($exceptMessage);
           }
           elseif ($status -like '*cancel*') {
