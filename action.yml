@@ -53,6 +53,7 @@ runs:
       shell: pwsh
       run: |
         using namespace System;
+        using namespace System.Collections;
         using namespace System.IO;
         [String]$kaggleInfo = ConvertTo-Json -InputObject @{
           'username' = '${{ inputs.username }}';
@@ -63,9 +64,8 @@ runs:
     - name: Setup test
       shell: pwsh
       run: |
-        using namespace System;
-        using namespace System.Collections;
-        using namespace System.IO;
+        # using namespace System;
+        # using namespace System.IO;
 
         # location
         [String]$actionPath = '${{ github.action_path }}';
@@ -93,8 +93,8 @@ runs:
     - name: Check status
       shell: pwsh
       run: |
-        using namespace System;
-        using namespace System.IO;
+        # using namespace System;
+        # using namespace System.IO;
 
         Set-Location -Path '${{ github.action_path }}' | Out-Null;
         [String]$kernelName = '${{ inputs.title }}';
