@@ -52,14 +52,14 @@ runs:
     - name: Setup kaggle.json
       shell: pwsh
       run: |
-        using namespace System;
-        using namespace System.Collections;
-        using namespace System.IO;
+        # using namespace System;
+        # using namespace System.Collections;
+        # using namespace System.IO;
         [String]$kaggleInfo = ConvertTo-Json -InputObject @{
           'username' = '${{ inputs.username }}';
           'key' = '${{ inputs.key }}'
         };
-        New-Item -Path ([Path]::Combine('~', '.kaggle', 'kaggle.json')) -Type File -Value $kaggleInfo | Out-Null;
+        New-Item -Path ([System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json')) -Type File -Value $kaggleInfo | Out-Null;
 
     - name: Setup test
       shell: pwsh
@@ -74,7 +74,7 @@ runs:
         # kaggle init
         kaggle kernels init -p $actionPath;
 
-        [String]$jsonPath = [Path]::Combine($actionPath, 'kernel-metadata.json');
+        [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
         # $metadata[''] = '$#{{ inputs. }}';
         $metadata['id'] = $metadata[id].Split('/')[0] + '/' + '${{ inputs.title }}';
@@ -105,7 +105,7 @@ runs:
           if ($status -like '*error*') {
             # [String]$fullMessage = (kaggle kernels output $kernelName -p $kernelName 2>&1) -join [Environment]::NewLine;
             kaggle kernels output $kernelName -p $kernelName;
-            [String]$fullMessage = (Get-Content -Path ([Path]::Combine($kernelName, $kernelName + '.log')) -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
+            [String]$fullMessage = (Get-Content -Path ([System.IO.Path]::Combine($kernelName, $kernelName + '.log')) -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
             [String]$exceptMessage = 'FAIL: Test(s) failed. Full logs below:' + [Environment]::NewLine
             + '::group::Full log' + [Environment]::NewLine
             + $fullMessage + [Environment]::NewLine
