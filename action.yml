@@ -59,7 +59,7 @@ runs:
           'username' = '${{ inputs.username }}';
           'key' = '${{ inputs.key }}'
         };
-        New-Item -Path ([System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json')) -Type File -Value $kaggleInfo | Out-Null;
+        New-Item -Path ([System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json')) -Type File -Value $kaggleInfo -Force | Out-Null;
 
     - name: Setup test
       shell: pwsh
