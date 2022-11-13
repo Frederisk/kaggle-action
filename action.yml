@@ -77,7 +77,7 @@ runs:
         [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
         # $metadata[''] = '$#{{ inputs. }}';
-        $metadata['id'] = $metadata[id].Split('/')[0] + '/' + '${{ inputs.title }}';
+        $metadata['id'] = $metadata['id'].Split('/')[0] + '/' + '${{ inputs.title }}';
         $metadata['title'] = '${{ inputs.title }}';
         $metadata['code_file'] = '${{ github.workspace }}' + '${{ inputs.code_file }}';
         $metadata['language'] = '${{ inputs.language }}';
