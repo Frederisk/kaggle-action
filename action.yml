@@ -68,6 +68,7 @@ runs:
         # using namespace System.IO;
 
         # location
+        Set-Location -Path '${{ github.action_path }}' | Out-Null;
         [String]$actionPath = '${{ github.action_path }}';
         # Set-Location -Path '${{ github.action_path }}' | Out-Null;
 
