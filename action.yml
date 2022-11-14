@@ -106,10 +106,12 @@ runs:
             # [String]$fullMessage = (kaggle kernels output $kernelName -p $kernelName 2>&1) -join [Environment]::NewLine;
             kaggle kernels output $kernelName -p $kernelName;
             [String]$fullMessage = (Get-Content -Path ([System.IO.Path]::Combine($kernelName, $kernelName + '.log')) -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
-            [String]$exceptMessage = 'FAIL: Test(s) failed. Full logs below:' + [Environment]::NewLine
-            + '::group::Full log' + [Environment]::NewLine
-            + $fullMessage + [Environment]::NewLine
-            + '::endgroup::';
+            [String]$exceptMessage = @"
+        FAIL: Test(s) failed. Full logs below:
+        ::group::Full log
+        $fullMessage
+        ::endgroup::
+        "@;
             throw [Exception]::new($exceptMessage);
           }
           elseif ($status -like '*cancel*') {
