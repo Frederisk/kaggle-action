@@ -70,7 +70,6 @@ runs:
         # location
         Set-Location -Path '${{ github.action_path }}' | Out-Null;
         [String]$actionPath = '${{ github.action_path }}';
-        # Set-Location -Path '${{ github.action_path }}' | Out-Null;
 
         # kaggle init
         kaggle kernels init -p $actionPath;
@@ -83,8 +82,8 @@ runs:
         $metadata['code_file'] = '${{ github.workspace }}' + '/' + '${{ inputs.code_file }}';
         $metadata['language'] = '${{ inputs.language }}';
         $metadata['kernel_type'] = '${{ inputs.kernel_type }}';
-        $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}';
-        $metadata['enable_internet'] = '${{ inputs.enable_internet }}';
+        $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}' -eq 'enable';
+        $metadata['enable_internet'] = '${{ inputs.enable_internet }}' -eq 'enable';
 
         ConvertTo-Json -InputObject $metadata | Set-Content -Path $jsonPath | Out-Null;
 
