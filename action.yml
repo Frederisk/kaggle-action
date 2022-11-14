@@ -80,7 +80,7 @@ runs:
         # $metadata[''] = '$#{{ inputs. }}';
         $metadata['id'] = $metadata['id'].Split('/')[0] + '/' + '${{ inputs.title }}';
         $metadata['title'] = '${{ inputs.title }}';
-        $metadata['code_file'] = '${{ github.workspace }}' + '${{ inputs.code_file }}';
+        $metadata['code_file'] = '${{ github.workspace }}' + '/' + '${{ inputs.code_file }}';
         $metadata['language'] = '${{ inputs.language }}';
         $metadata['kernel_type'] = '${{ inputs.kernel_type }}';
         $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}';
