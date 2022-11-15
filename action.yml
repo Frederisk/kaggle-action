@@ -1,38 +1,45 @@
 name: kaggle Action
-author: "TODO:"
-description: "TODO:"
+author: Rowe Wilson Frederisk Holme
+description: Use kaggle to implement simple CI, which supports GPU.
 
 inputs:
   username:
-    description: "TODO:"
+    description: kaggle username
     required: true
   key:
-    description: "TODO:"
+    description: kaggle key
     required: true
 
   # id:
+  #   description: The URL slug of your kernel
+  # id_no:
+  #   description: The kernel's numeric ID
   title:
-    description: "TODO:"
+    description: The title of the kernel
     required: true
   code_file:
-    description: "TODO:"
+    description: The path to your kernel source code
     required: true
   language:
-    description: "TODO:"
+    description: The language your kernel is written in
     default: python
   kernel_type:
-    description: "TODO:"
+    description: The type of kernel
     default: script
   # is_private:
+  #   description: Whether or not the kernel should be private
   enable_gpu:
-    description: "TODO:"
+    description: Whether or not the kernel should run on a GPU
     default: enable
   enable_internet:
-    description: "TODO:"
+    description: Whether or not the kernel should be able to access the internet
     default: enable
   # dataset_sources:
+  #   description: A list of dataset sources
   # competition_sources:
+  #   description: A list of competition sources
   # kernel_sources:
+  #   description: A list of kernel sources
 
 outputs:
   automatic_releases_tag:
@@ -52,21 +59,19 @@ runs:
     - name: Setup kaggle.json
       shell: pwsh
       run: |
-        # using namespace System;
-        # using namespace System.Collections;
-        # using namespace System.IO;
         [String]$kaggleInfo = ConvertTo-Json -InputObject @{
           'username' = '${{ inputs.username }}';
           'key' = '${{ inputs.key }}'
         };
-        New-Item -Path ([System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json')) -Type File -Value $kaggleInfo -Force | Out-Null;
+        [String]$kaggleFile = [System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json');
+        New-Item -Path $kaggleFile -Type File -Value $kaggleInfo -Force | Out-Null;
+        if ($IsLinux -or $IsMacOS) {
+          chmod 600 $kaggleFile;
+        }
 
     - name: Setup test
       shell: pwsh
       run: |
-        # using namespace System;
-        # using namespace System.IO;
-
         # location
         Set-Location -Path '${{ github.action_path }}' | Out-Null;
         [String]$actionPath = '${{ github.action_path }}';
@@ -74,6 +79,7 @@ runs:
         # kaggle init
         kaggle kernels init -p $actionPath;
 
+        # process metadata json
         [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
         # $metadata[''] = '$#{{ inputs. }}';
@@ -93,36 +99,38 @@ runs:
     - name: Check status
       shell: pwsh
       run: |
-        # using namespace System;
-        # using namespace System.IO;
-
+        # location
         Set-Location -Path '${{ github.action_path }}' | Out-Null;
         [String]$kernelName = '${{ inputs.title }}';
 
+        # check status
         while ($true) {
           [String]$status = (kaggle kernels status $kernelName 2>&1) -join [Environment]::NewLine;
-
+          # error
           if ($status -like '*error*') {
-            # [String]$fullMessage = (kaggle kernels output $kernelName -p $kernelName 2>&1) -join [Environment]::NewLine;
             kaggle kernels output $kernelName -p $kernelName;
             [String]$fullMessage = (Get-Content -Path ([System.IO.Path]::Combine($kernelName, $kernelName + '.log')) -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
-            [String]$exceptMessage = @"
+            Write-Host -Object @"
         FAIL: Test(s) failed. Full logs below:
         ::group::Full log
         $fullMessage
         ::endgroup::
-        "@;
-            throw [Exception]::new($exceptMessage);
-          }
-          elseif ($status -like '*cancel*') {
-            throw [Exception]::new('FAIL: Test(s) failed. The kaggle kernel has been canceled.');
-          }
-          elseif ($status -like '*complete*') {
-            Write-Host -Object 'SUCCESS: Kaggle Integration Tests!';
+        "@ | Out-Null;
             break;
           }
+          # cancel
+          elseif ($status -like '*cancel*') {
+            Write-Host -Object '::error::FAIL: Test(s) failed. The kaggle kernel has been canceled.' | Out-Null;
+            break;
+          }
+          #complete
+          elseif ($status -like '*complete*') {
+            Write-Host -Object 'SUCCESS: Kaggle Integration Tests!' | Out-Null;
+            break;
+          }
+          # running
           else {
-            Start-Sleep -Seconds 3;
+            Start-Sleep -Seconds 3 | Out-Null;
           }
         }
 
