@@ -104,34 +104,37 @@ runs:
         [String]$kernelName = '${{ inputs.title }}';
 
         # check status
-        while ($true) {
-          [String]$status = (kaggle kernels status $kernelName 2>&1) -join [Environment]::NewLine;
-          # error
-          if ($status -like '*error*') {
-            kaggle kernels output $kernelName -p $kernelName;
-            [String]$fullMessage = (Get-Content -Path ([System.IO.Path]::Combine($kernelName, $kernelName + '.log')) -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
-            Write-Host -Object @"
-        FAIL: Test(s) failed. Full logs below:
+        try {
+          while ($true) {
+            [String]$status = (kaggle kernels status $kernelName 2>&1) -join ' ';
+            # error
+            if ($status -like '*error*') {
+              throw [Exception]::new('FAIL: Test(s) failed.');
+            }
+            # cancel
+            elseif ($status -like '*cancel*') {
+              throw [OperationCanceledException]::new('FAIL: Test(s) failed. The kaggle kernel has been canceled.');
+            }
+            #complete
+            elseif ($status -like '*complete*') {
+              Write-Host -Object 'SUCCESS: Kaggle Integration Tests!' -ForegroundColor Green | Out-Null;
+              break;
+            }
+            # running
+            else {
+              Start-Sleep -Seconds 3 | Out-Null;
+            }
+          }
+        }
+        catch {
+          kaggle kernels output $kernelName;
+          [String]$fullMessage = (Get-Content -Path ($kernelName + '.log') -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
+          Write-Host -Object @"
         ::group::Full log
         $fullMessage
         ::endgroup::
         "@ | Out-Null;
-            break;
-          }
-          # cancel
-          elseif ($status -like '*cancel*') {
-            Write-Host -Object '::error::FAIL: Test(s) failed. The kaggle kernel has been canceled.' | Out-Null;
-            break;
-          }
-          #complete
-          elseif ($status -like '*complete*') {
-            Write-Host -Object 'SUCCESS: Kaggle Integration Tests!' | Out-Null;
-            break;
-          }
-          # running
-          else {
-            Start-Sleep -Seconds 3 | Out-Null;
-          }
+          throw;
         }
 
 branding:
