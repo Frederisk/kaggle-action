@@ -109,7 +109,7 @@ runs:
             [String]$status = (kaggle kernels status $kernelName 2>&1) -join ' ';
             # error
             if ($status -like '*error*') {
-              throw [Exception]::new('FAIL: Test(s) failed.');
+              throw [System.Management.Automation.ApplicationFailedException]::new('FAIL: Test(s) failed.');
             }
             # cancel
             elseif ($status -like '*cancel*') {
@@ -126,7 +126,8 @@ runs:
             }
           }
         }
-        catch {
+        catch [System.Management.Automation.ApplicationFailedException], [OperationCanceledException]  {
+          # write log
           kaggle kernels output $kernelName;
           [String]$fullMessage = (Get-Content -Path ($kernelName + '.log') -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
           Write-Host -Object @"
