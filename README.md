@@ -63,6 +63,9 @@ For free users, kaggle will provide more than 30 hours of GPU usage per week, wh
   callsh(['git', 'clone', 'https://github.com/name/repo_name'])
   os.chdir('repo_name')
   callsh(['bash', 'scripts/setup.sh'])
+  callsh(['conda', 'create', '-n', 'testenv', 'python=3.8.12', 'cudatoolkit=9.2', 'cudnn', '-y'])
+  callsh(['/opt/conda/envs/testenv/bin/pip', 'install', '-r', 'requirements.txt'])
+  callsh(['/opt/conda/envs/testenv/bin/pytest', 'tests'])
   # ......
   ```
 
