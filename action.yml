@@ -34,12 +34,23 @@ inputs:
   enable_internet:
     description: Whether or not the kernel should be able to access the internet
     default: enable
+  # help done by GitHub COpilot
+  gpu_accelerator:
+    description: The GPU accelerator type to use (e.g., 'nvidia-tesla-p100', 'nvidia-tesla-t4', 'nvidia-tesla-k80')
+    required: false
+    default: 'nvidia-tesla-p100'
   # dataset_sources:
   #   description: A list of dataset sources
   # competition_sources:
   #   description: A list of competition sources
   # kernel_sources:
   #   description: A list of kernel sources
+
+  # As per GitHub Copilot, these are the available GPU runtimes; kindly recheck and edit the same, and add it in the docs
+  # nvidia-tesla-p100 (default, most common)
+  # nvidia-tesla-t4
+  # nvidia-tesla-k80
+  # tpu-v3 (for TPU workloads)
 
 outputs:
   automatic_releases_tag:
@@ -90,6 +101,7 @@ runs:
         $metadata['kernel_type'] = '${{ inputs.kernel_type }}';
         $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}' -eq 'enable';
         $metadata['enable_internet'] = '${{ inputs.enable_internet }}' -eq 'enable';
+        $metadata['accelerator'] = '${{ inputs.gpu_accelerator }}';
 
         ConvertTo-Json -InputObject $metadata | Set-Content -Path $jsonPath | Out-Null;
 
