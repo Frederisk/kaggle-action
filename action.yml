@@ -41,7 +41,7 @@ inputs:
   # kernel_sources:
   #   description: A list of kernel sources
   machine_shape:
-    description: The type of accelerator being used with the kernel. Supported ones- 'default' (probable), 'NvidiaTeslaT4' (confirmed), 'NvidiaTeslaT4Highmem' (probable), 'Kaggle_TPU_v3_8' (probable) or 'Kaggle_Nvidia_Tesla_P100' (probable) 
+    description: The type of accelerator being used with the kernel. Supported ones- 'default' (probable), 'NvidiaTeslaT4' for the 2X T4 runtime (confirmed), 'Kaggle_TPU_v3_8' (probable) or 'Gpu' for the P100 (probable) 
     default: default
 
 outputs:
