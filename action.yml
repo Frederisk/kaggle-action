@@ -40,6 +40,9 @@ inputs:
   #   description: A list of competition sources
   # kernel_sources:
   #   description: A list of kernel sources
+  machine_shape:
+    description: The type of accelerator being used with the kernel. Supported ones- 'default' (probable), 'NvidiaTeslaT4' (confirmed), 'NvidiaTeslaT4Highmem' (probable), 'Kaggle_TPU_v3_8' (probable) or 'Kaggle_Nvidia_Tesla_P100' (probable) 
+    default: default
 
 outputs:
   automatic_releases_tag:
@@ -90,6 +93,7 @@ runs:
         $metadata['kernel_type'] = '${{ inputs.kernel_type }}';
         $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}' -eq 'enable';
         $metadata['enable_internet'] = '${{ inputs.enable_internet }}' -eq 'enable';
+        $metadata['machine_shape'] = '${{ inputs.machine_shape }}';
 
         ConvertTo-Json -InputObject $metadata | Set-Content -Path $jsonPath | Out-Null;
 
