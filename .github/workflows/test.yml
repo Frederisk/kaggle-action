@@ -1,0 +1,38 @@
+name: Test
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        machine_shape: ['NvidiaTeslaP100', 'NvidiaTeslaT4', '']
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Prepare Test Script
+        shell: pwsh
+        run: |
+          [String]$testPath = '__tests__/check-gpu.py';
+          [String]$expected = '${{ matrix.machine_shape }}';
+
+          [String]$content = Get-Content -Path $testPath -Raw;
+          $content = $content -replace '___EXPECTED_SHAPE___', $expected;
+          Set-Content -Path $testPath -Value $content;
+
+      - name: Run Custom Kaggle Action Tests
+        uses: ./
+        with:
+          api_token: ${{ secrets.KAGGLE_TOKEN }}
+          title: Kaggle Action Test - ${{ matrix.machine_shape == '' && 'None' || matrix.machine_shape }}
+          code_file: __tests__/check-gpu.py
+          language: python
+          kernel_type: script
+          enable_gpu: disable
+          machine_shape: ${{ matrix.machine_shape }}
