@@ -1,4 +1,4 @@
-name: kaggle action
+name: coder-x15 kaggle action
 author: Rowe Wilson Frederisk Holme
 description: Use kaggle to implement simple CI, which supports GPU.
 
