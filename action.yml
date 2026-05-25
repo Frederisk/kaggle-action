@@ -5,11 +5,8 @@ description: Use kaggle to implement simple CI, which supports GPU.
 inputs:
   username:
     description: kaggle username
-    required: true
   key:
     description: kaggle key
-    required: true
-
   # id:
   #   description: The URL slug of your kernel
   # id_no:
@@ -30,10 +27,10 @@ inputs:
   #   description: Whether or not the kernel should be private
   enable_gpu:
     description: Whether or not the kernel should run on a GPU
-    default: enable
+    default: 'true'
   enable_internet:
     description: Whether or not the kernel should be able to access the internet
-    default: enable
+    default: 'true'
   # dataset_sources:
   #   description: A list of dataset sources
   # competition_sources:
@@ -88,8 +85,8 @@ runs:
         $metadata['code_file'] = '${{ github.workspace }}' + '/' + '${{ inputs.code_file }}';
         $metadata['language'] = '${{ inputs.language }}';
         $metadata['kernel_type'] = '${{ inputs.kernel_type }}';
-        $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}' -eq 'enable';
-        $metadata['enable_internet'] = '${{ inputs.enable_internet }}' -eq 'enable';
+        $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}' -in 'true', 'enable';
+        $metadata['enable_internet'] = '${{ inputs.enable_internet }}' -in 'true', 'enable';
 
         ConvertTo-Json -InputObject $metadata | Set-Content -Path $jsonPath | Out-Null;
 

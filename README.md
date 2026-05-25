@@ -73,14 +73,14 @@ For free users, kaggle will provide more than 30 hours of GPU usage per week, wh
 
 These parameters are slightly different from the kaggle api, but [the kaggle api's docs](https://github.com/Kaggle/kaggle-api/wiki/Kernel-Metadata) may still be informative.
 
-- `username`: Required. Your kaggle username.
-- `key`: Required. Your kaggle key/token.
+- `username`: Your kaggle username.
+- `key`: Your kaggle key/token.
 - `title`: Required. The title of the kernel. Please be aware that kernel titles and slugs are linked to each other. A kernel slug is always the title lowercased with dashes (`-`) Replacing spaces.
 - `code_file`: Required. The path to your kernel source code.
 - `language`: Default value is `python`. The language your kernel is written in. Valid options are `python`, `r`, and `rmarkdown`.
 - `kernel_type`: Default value is `script`. The type of kernel. Valid options are `script` and `notebook`.
-- `enable_gpu`: Default value is `enable`. Whether or not the kernel should run on a GPU. `enable` to run on the GPU, otherwise not.
-- `enable_internet`: Default value is `enable`. Whether or not the kernel should be able to access the internet. `enable` to use the internet, otherwise not.
+- `enable_gpu`: Default value is `true`. Whether or not the kernel should run on a GPU. `true` or `enable` to run on the GPU, otherwise not.
+- `enable_internet`: Default value is `true`. Whether or not the kernel should be able to access the internet. `true` or `enable` to use the internet, otherwise not.
 
 ## Known Issues
 
