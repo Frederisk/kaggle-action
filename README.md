@@ -14,16 +14,22 @@ For free users, kaggle will provide more than 30 hours of GPU usage per week, wh
 
   > In order to avoid abuse of server resources, kaggle may require you to use your mobile phone number for verification. If your network is unavailable or the GPU is unavailable during execution, it may be that kaggle restricts the use of unauthenticated users.
 
-- Then go to your account page. Create your API Token. You'll get a file with something like this:
+- Then go to your Settings > API Tokens page. Click the "Generate New Token" button to create a new API token. Copy it to your clipboard.
+- Add the API token to your GitHub repository's secrets. You can name the secret `KAGGLE_API_TOKEN` or any other name you like. Make sure to keep it secret and do not share it with anyone.
 
-  ```json
-  {
-    "username": "USERNAME",
-    "key": "TOKEN"
-  }
-  ```
+> If you want to use the legacy API credentials, you can set `KAGGLE_USERNAME` and `KAGGLE_KEY` secrets. However, it's recommended to use the API token instead of the legacy credentials.
+>
+> - Then go to your account page. Create your API Token. You'll get a file with something like this:
+>
+>   ```json
+>   {
+>     "username": "USERNAME",
+>     "key": "TOKEN"
+>   }
+>   ```
+>
+> - Add `USERNAME` and `TOKEN` to the secret of your GitHub repository respectively.
 
-- Add `USERNAME` and `TOKEN` to the secret of your GitHub repository respectively.
 - Then create your workflows file, for example:
 
   ```yaml
@@ -40,13 +46,16 @@ For free users, kaggle will provide more than 30 hours of GPU usage per week, wh
         - name: Run kaggle
           uses: Frederisk/kaggle-action@v1.0.0
           with:
-            username: ${{ secrets.KAGGLE_USERNAME }}
-            key: ${{ secrets.KAGGLE_TOKEN }}
+            api_token: ${{ secrets.KAGGLE_API_TOKEN }}
+            # or legacy API credentials
+            # username: ${{ secrets.KAGGLE_USERNAME }}
+            # key: ${{ secrets.KAGGLE_TOKEN }}
             # The name of the kaggle used for testing, take a new one.
             # Try to avoid underscores, spaces or other special characters.
             title: KaggleTestCI
             # The location of your test script, which we will write next.
             code_file: .github/script/gpu_runner.py
+            # and so on, you can set other parameters as needed.
   ```
 
 - Finally, you can write your own script to test. In particular, the script will be executed on Kaggle's server, not GitHub Action's server, so you may also need to clone the repository to the server. In a python script, you can execute external commands through functions such as `os.system`, `subprocess.call`, `subprocess.run`, etc. Here's a simple example:
@@ -73,8 +82,9 @@ For free users, kaggle will provide more than 30 hours of GPU usage per week, wh
 
 These parameters are slightly different from the kaggle api, but [the kaggle api's docs](https://github.com/Kaggle/kaggle-api/wiki/Kernel-Metadata) may still be informative.
 
-- `username`: Required. Your kaggle username.
-- `key`: Required. Your kaggle key/token.
+- `api_token`: Your kaggle api token. If you have set this parameter, `key` and `username` will be ignored.
+- `username`: Your kaggle username. Notice that this is not your display name. If `api_token` has been set, this parameter will be ignored.
+- `key`: Your kaggle legacy API credentials. It's recommended to use `api_token` instead of `key` and `username`. At least one of `api_token` and `key` is required. If both are set, `api_token` will be used.
 - `title`: Required. The title of the kernel. Please be aware that kernel titles and slugs are linked to each other. A kernel slug is always the title lowercased with dashes (`-`) Replacing spaces.
 - `code_file`: Required. The path to your kernel source code.
 - `language`: Default value is `python`. The language your kernel is written in. Valid options are `python`, `r`, and `rmarkdown`.

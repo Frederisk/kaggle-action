@@ -3,6 +3,8 @@ author: Rowe Wilson Frederisk Holme
 description: Use kaggle to implement simple CI, which supports GPU.
 
 inputs:
+  api_token:
+    description: kaggle api token
   username:
     description: kaggle username
     required: true
@@ -44,10 +46,10 @@ inputs:
 outputs:
   automatic_releases_tag:
     description: The release tag this action just processed
-    value: ""
+    value: ''
   upload_url:
     description: The URL for uploading additional assets to the release
-    value: ""
+    value: ''
 
 runs:
   using: composite
@@ -56,17 +58,32 @@ runs:
       shell: pwsh
       run: python -m pip install --upgrade kaggle --user
 
-    - name: Setup kaggle.json
+    - name: Setup token
       shell: pwsh
       run: |
-        [String]$kaggleInfo = ConvertTo-Json -InputObject @{
-          'username' = '${{ inputs.username }}';
-          'key' = '${{ inputs.key }}'
-        };
-        [String]$kaggleFile = [System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json');
-        New-Item -Path $kaggleFile -Type File -Value $kaggleInfo -Force | Out-Null;
-        if ($IsLinux -or $IsMacOS) {
-          chmod 600 $kaggleFile;
+        [String]$apiToken = '${{ inputs.api_token }}';
+        [String]$key = '${{ inputs.key }}';
+        if (-not [String]::IsNullOrWhiteSpace($apiToken)) {
+          [String]$kaggleTokenFile = [System.IO.Path]::Combine('~', '.kaggle', 'access_token');
+          New-Item -Path $kaggleTokenFile -Type File -Value $apiToken -Force | Out-Null;
+          if ($IsLinux -or $IsMacOS) {
+            chmod 600 $kaggleTokenFile;
+          }
+        }
+        elseif (-not [String]::IsNullOrWhiteSpace($key)) {
+          Write-Warning -Message 'Using key input is not recommended. Please use api_token input instead. For more details, please refer to the action README.' | Out-Null;
+          [String]$kaggleInfo = ConvertTo-Json -InputObject @{
+            'username' = '${{ inputs.username }}';
+            'key' = $key
+          };
+          [String]$kaggleFile = [System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json');
+          New-Item -Path $kaggleFile -Type File -Value $kaggleInfo -Force | Out-Null;
+          if ($IsLinux -or $IsMacOS) {
+            chmod 600 $kaggleFile;
+          }
+        }
+        else {
+          throw [System.ArgumentException]::new('At least one of api_token and key is required. Please set your kaggle API credentials via api_token or key input.');
         }
 
     - name: Setup test

@@ -29,7 +29,7 @@ jobs:
       - name: Run Custom Kaggle Action Tests
         uses: ./
         with:
-          api_token: ${{ secrets.KAGGLE_TOKEN }}
+          api_token: ${{ secrets.KAGGLE_API_TOKEN }}
           title: Kaggle Action Test - ${{ matrix.machine_shape == '' && 'None' || matrix.machine_shape }}
           code_file: __tests__/check-gpu.py
           language: python
