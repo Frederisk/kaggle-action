@@ -86,6 +86,7 @@ These parameters are slightly different from the kaggle api, but [the kaggle api
 - `username`: Your kaggle username. Notice that this is not your display name. If `api_token` has been set, this parameter will be ignored.
 - `key`: Your kaggle legacy API credentials. It's recommended to use `api_token` instead of `key` and `username`. At least one of `api_token` and `key` is required. If both are set, `api_token` will be used.
 - `title`: Required. The title of the kernel. Please be aware that kernel titles and slugs are linked to each other. A kernel slug is always the title lowercased with dashes (`-`) Replacing spaces.
+- `id`: The slug of the kernel. If not set, it will be generated from the title. Please try to avoid underscores, spaces or other special characters in the title, as they may cause problems when generating slugs.
 - `code_file`: Required. The path to your kernel source code.
 - `language`: Default value is `python`. The language your kernel is written in. Valid options are `python`, `r`, and `rmarkdown`.
 - `kernel_type`: Default value is `script`. The type of kernel. Valid options are `script` and `notebook`.
