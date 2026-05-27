@@ -83,16 +83,33 @@ For free users, kaggle will provide more than 30 hours of GPU usage per week, wh
 These parameters are slightly different from the kaggle api, but [the kaggle api's docs](https://github.com/Kaggle/kaggle-api/wiki/Kernel-Metadata) may still be informative.
 
 - `api_token`: Your kaggle api token. If you have set this parameter, `key` and `username` will be ignored.
-- `username`: Your kaggle username. Notice that this is not your display name. If `api_token` has been set, this parameter will be ignored.
+- `username`: Your kaggle username. Notice that this is not your display name. If `api_token` has been set and this parameter has value, then this parameter will be forced to override the current kaggle kernel owner.
 - `key`: Your kaggle legacy API credentials. It's recommended to use `api_token` instead of `key` and `username`. At least one of `api_token` and `key` is required. If both are set, `api_token` will be used.
-- `title`: Required. The title of the kernel. Please be aware that kernel titles and slugs are linked to each other. A kernel slug is always the title lowercased with dashes (`-`) Replacing spaces.
 - `id`: The slug of the kernel. If not set, it will be generated from the title. Please try to avoid underscores, spaces or other special characters in the title, as they may cause problems when generating slugs.
+- `title`: Required. The title of the kernel. Please be aware that kernel titles and slugs are linked to each other. A kernel slug is always the title lowercased with dashes (`-`) Replacing spaces.
 - `code_file`: Required. The path to your kernel source code.
 - `language`: Default value is `python`. The language your kernel is written in. Valid options are `python`, `r`, and `rmarkdown`.
 - `kernel_type`: Default value is `script`. The type of kernel. Valid options are `script` and `notebook`.
+- `is_private`: Default value is `true`. Whether or not the kernel should be private. `true` to make the kernel private, `false` to make it public.
 - `enable_gpu`: Default value is `enable`. Whether or not the kernel should run on a GPU. `enable` to run on the GPU, otherwise not.
+- `enable_tpu`: Default value is `disable`. Whether or not the kernel should run on a TPU. `enable` to run on the TPU, otherwise not.
 - `enable_internet`: Default value is `enable`. Whether or not the kernel should be able to access the internet. `enable` to use the internet, otherwise not.
+- `dataset_sources`: A list of invalid dataset sources. It's a an array of strings separated by newlines:
+
+  ```yaml
+    dataset_sources: |
+      dataset1
+      dataset2
+  ```
+
+- `competition_sources`: A list of invalid competition sources. It's a an array of strings separated by newlines.
+- `kernel_sources`: A list of invalid kernel sources. It's a an array of strings separated by newlines.
+- `keywords`: The keywords of the kernel. It's a an array of strings separated by newlines.
+- `docker_image`: Which docker image to run with.
+- `docker_image_pinning_type`: Which docker image to use for executing new versions going forward.
 - `machine_shape`: The accelerator to be added to the kernel to train it. It's will override `enable_gpu` and `enable_tpu` if specified. Defualt value is empty, which means no accelerator will be added. Check [this page](https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md#kaggle-kernels-push) for the supported machine shapes.
+- `timeout_seconds`: The timeout for pushing the kernel. The default value is not specified.
+- `fetch_time_seconds`: The time interval for fetching the kernel status. The default value is `3` seconds.
 
 ## Known Issues
 
