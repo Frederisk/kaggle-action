@@ -1,1 +1,1 @@
-tests/ export-ignore
+__tests__/ export-ignore

@@ -9,7 +9,6 @@ inputs:
     description: kaggle username
   key:
     description: kaggle key
-    required: true
   id:
     description: The URL slug of your kernel
   # id_no:
