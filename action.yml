@@ -56,7 +56,7 @@ runs:
   steps:
     - name: Install kaggle CLI tools
       shell: pwsh
-      run: python -m pip install --upgrade kaggle --user
+      run: python -m pip install --upgrade kaggle
 
     - name: Setup token
       shell: pwsh
@@ -64,7 +64,7 @@ runs:
         [String]$apiToken = '${{ inputs.api_token }}';
         [String]$key = '${{ inputs.key }}';
         if (-not [String]::IsNullOrWhiteSpace($apiToken)) {
-          [String]$kaggleTokenFile = [System.IO.Path]::Combine('~', '.kaggle', 'access_token');
+          [String]$kaggleTokenFile = [System.IO.Path]::Combine($HOME, '.kaggle', 'access_token');
           New-Item -Path $kaggleTokenFile -Type File -Value $apiToken -Force | Out-Null;
           if ($IsLinux -or $IsMacOS) {
             chmod 600 $kaggleTokenFile;
@@ -76,7 +76,7 @@ runs:
             'username' = '${{ inputs.username }}';
             'key' = $key
           };
-          [String]$kaggleFile = [System.IO.Path]::Combine('~', '.kaggle', 'kaggle.json');
+          [String]$kaggleFile = [System.IO.Path]::Combine($HOME, '.kaggle', 'kaggle.json');
           New-Item -Path $kaggleFile -Type File -Value $kaggleInfo -Force | Out-Null;
           if ($IsLinux -or $IsMacOS) {
             chmod 600 $kaggleFile;
@@ -87,16 +87,29 @@ runs:
         }
     - name: Resolve Kernel Slug
       shell: pwsh
+      env:
+        INPUT_ID: ${{ inputs.id }}
+        INPUT_TITLE: ${{ inputs.title }}
       run: |
-        [String]$slug = '${{ inputs.id }}';
+        [String]$slug = $env:INPUT_ID;
         if ([String]::IsNullOrWhiteSpace($slug)) {
-          $slug = ('${{ inputs.title }}').ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+|-+$', '';
+          try {
+            $slug = (python -c "import os; from slugify import slugify; print(slugify(os.environ.get('INPUT_TITLE', '')))" 2>$null).Trim();
+          } catch { }
+          if ([String]::IsNullOrWhiteSpace($slug)) {
+            $slug = $env:INPUT_TITLE.ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+|-+$', '';
+          }
+        }
+        else if ($slug -like '*/*') {
+          $slug = $slug.Split('/')[-1];
         }
         Write-Host -Object "Resolved kernel slug: $slug" -ForegroundColor Cyan | Out-Null;
         "KAGGLE_KERNEL_SLUG=$slug" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append;
 
     - name: Setup test
       shell: pwsh
+      env:
+        INPUT_TITLE: ${{ inputs.title }}
       run: |
         # location
         Set-Location -Path '${{ github.action_path }}' | Out-Null;
@@ -109,9 +122,9 @@ runs:
         [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
         # $metadata[''] = '$#{{ inputs. }}';
-        $metadata['id'] = $metadata['id'].Split('/')[0] + '/' + $env:KAGGLE_KERNEL_SLUG;
-        $metadata['title'] = '${{ inputs.title }}';
-        $metadata['code_file'] = '${{ github.workspace }}' + '/' + '${{ inputs.code_file }}';
+        $metadata['id'] = '${{ inputs.username }}' + '/' + $env:KAGGLE_KERNEL_SLUG;
+        $metadata['title'] = $env:INPUT_TITLE;
+        $metadata['code_file'] = [System.IO.Path]::Combine('${{ github.workspace }}', '${{ inputs.code_file }}');
         $metadata['language'] = '${{ inputs.language }}';
         $metadata['kernel_type'] = '${{ inputs.kernel_type }}';
         $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}' -eq 'enable';
@@ -131,8 +144,8 @@ runs:
         # check status
         try {
           while ($true) {
-            [String]$status = (kaggle kernels status $slug 2>&1) -join ' ';
-            Write-Host -Object "Current kernel status: $status" -ForegroundColor Cyan | Out-Null;
+            [String]$status = (kaggle kernels status $env:KAGGLE_KERNEL_SLUG 2>&1) -join ' ';
+            Write-Host -Object "[$([DateTime]::Now.ToString('s'))] Current kernel status: $status" -ForegroundColor Cyan | Out-Null;
             # error
             if ($status -like '*error*') {
               throw [System.Management.Automation.ApplicationFailedException]::new('FAIL: Test(s) failed.');
