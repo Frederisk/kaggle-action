@@ -122,7 +122,7 @@ runs:
         [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
         # $metadata[''] = '$#{{ inputs. }}';
-        $metadata['id'] = '${{ inputs.username }}' + '/' + $env:KAGGLE_KERNEL_SLUG;
+        $metadata['id'] = $metadata['id'].Split('/')[0] + '/' + $env:KAGGLE_KERNEL_SLUG;
         $metadata['title'] = $env:INPUT_TITLE;
         $metadata['code_file'] = [System.IO.Path]::Combine('${{ github.workspace }}', '${{ inputs.code_file }}');
         $metadata['language'] = '${{ inputs.language }}';
