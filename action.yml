@@ -100,7 +100,7 @@ runs:
             $slug = $env:INPUT_TITLE.ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+|-+$', '';
           }
         }
-        else if ($slug -like '*/*') {
+        elseif ($slug -like '*/*') {
           $slug = $slug.Split('/')[-1];
         }
         Write-Host -Object "Resolved kernel slug: $slug" -ForegroundColor Cyan | Out-Null;
