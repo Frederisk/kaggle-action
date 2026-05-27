@@ -8,8 +8,8 @@ permissions:
   contents: write
 
 jobs:
-  # test:
-  #  uses: ./.github/workflows/test.yml
+  test:
+    uses: ./.github/workflows/test.yml
   build-and-release:
     runs-on: ubuntu-latest
     steps:
@@ -36,7 +36,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: development
-          name: "Development Pre-release"
+          name: 'Development Pre-release'
           prerelease: true
           generate_release_notes: true
 
