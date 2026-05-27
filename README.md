@@ -81,6 +81,7 @@ These parameters are slightly different from the kaggle api, but [the kaggle api
 - `kernel_type`: Default value is `script`. The type of kernel. Valid options are `script` and `notebook`.
 - `enable_gpu`: Default value is `enable`. Whether or not the kernel should run on a GPU. `enable` to run on the GPU, otherwise not.
 - `enable_internet`: Default value is `enable`. Whether or not the kernel should be able to access the internet. `enable` to use the internet, otherwise not.
+- `machine_shape`: The accelerator to be added to the kernel to train it. It's will override `enable_gpu` and `enable_tpu` if specified. Defualt value is empty, which means no accelerator will be added. Check [this page](https://github.com/Kaggle/kaggle-cli/blob/main/docs/kernels.md#kaggle-kernels-push) for the supported machine shapes.
 
 ## Known Issues
 
