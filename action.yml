@@ -100,7 +100,8 @@ runs:
         [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
         # $metadata[''] = '$#{{ inputs. }}';
-        $metadata['id'] = $metadata['id'].Split('/')[0] + '/' + '${{ inputs.title }}';
+        [String]$slug = ('${{ inputs.title }}').ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+|-+$', '';
+        $metadata['id'] = $metadata['id'].Split('/')[0] + '/' + $slug;
         $metadata['title'] = '${{ inputs.title }}';
         $metadata['code_file'] = '${{ github.workspace }}' + '/' + '${{ inputs.code_file }}';
         $metadata['language'] = '${{ inputs.language }}';
@@ -118,12 +119,14 @@ runs:
       run: |
         # location
         Set-Location -Path '${{ github.action_path }}' | Out-Null;
-        [String]$kernelName = '${{ inputs.title }}';
+        # [String]$kernelName = '${{ inputs.title }}';
+        [String]$slug = ('${{ inputs.title }}').ToLower() -replace '[^a-z0-9]+', '-' -replace '^-+|-+$', '';
 
         # check status
         try {
           while ($true) {
-            [String]$status = (kaggle kernels status $kernelName 2>&1) -join ' ';
+            [String]$status = (kaggle kernels status $slug 2>&1) -join ' ';
+            Write-Host -Object "Current kernel status: $status" -ForegroundColor Cyan | Out-Null;
             # error
             if ($status -like '*error*') {
               throw [System.Management.Automation.ApplicationFailedException]::new('FAIL: Test(s) failed.');
@@ -145,8 +148,8 @@ runs:
         }
         catch [System.Management.Automation.ApplicationFailedException], [OperationCanceledException]  {
           # write log
-          kaggle kernels output $kernelName;
-          [String]$fullMessage = (Get-Content -Path ($kernelName + '.log') -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
+          kaggle kernels output $slug;
+          [String]$fullMessage = (Get-Content -Path ($slug + '.log') -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
           Write-Host -Object @"
         ::group::Full log
         $fullMessage
