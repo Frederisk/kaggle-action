@@ -6,7 +6,7 @@ Execute CI/CD with [kaggle](https://www.kaggle.com/). You can use the free kaggl
 
 Kaggle provides a series of remote control tools and free GPU resources. And these resources can be used in CI/CD after combination.
 
-For free users, kaggle will provide more than 30 hours of GPU usage per week, which is enough to provide enough testing for some small projects. For some open source projects, using free resources instead of renting GPU VMs yourself can save a lot of money.
+For free users, kaggle will provide more than 30 hours of GPU usage per week, which is enough to provide testing for some small projects. For some open source projects, using free resources instead of renting GPU VMs yourself can save a lot of money.
 
 ## Usage
 
