@@ -25,31 +25,37 @@ inputs:
   kernel_type:
     description: The type of kernel
     default: script
-  # is_private:
-  #   description: Whether or not the kernel should be private
+  is_private:
+    description: Whether or not the kernel should be private
+    default: 'true'
   enable_gpu:
     description: Whether or not the kernel should run on a GPU
     default: 'true'
+  enable_tpu:
+    description: Whether or not the kernel should run on a TPU
+    default: 'false'
   enable_internet:
     description: Whether or not the kernel should be able to access the internet
     default: 'true'
-  # dataset_sources:
-  #   description: A list of dataset sources
-  # competition_sources:
-  #   description: A list of competition sources
-  # kernel_sources:
-  #   description: A list of kernel sources
+  dataset_sources:
+    description: A list of dataset sources
+  competition_sources:
+    description: A list of competition sources
+  kernel_sources:
+    description: A list of kernel sources
+  keywords:
+    description: A list of keywords to apply to the kernel
+  docker_image:
+    description: Which docker image to run with
+  docker_image_pinning_type:
+    description: Which docker image to use for executing new versions going forward
   machine_shape:
     description: The type of accelerator being used with the kernel
-    default: ''
-
-outputs:
-  automatic_releases_tag:
-    description: The release tag this action just processed
-    value: ''
-  upload_url:
-    description: The URL for uploading additional assets to the release
-    value: ''
+  timeout_seconds:
+    description: Limit the run time of a kernel to the given number of seconds. The global maximum time will not be exceeded
+  fetch_time_seconds:
+    description: The time to wait for the kernel to finish fetching data
+    default: '3'
 
 runs:
   using: composite
@@ -60,21 +66,23 @@ runs:
 
     - name: Setup token
       shell: pwsh
+      env:
+        INPUT_API_TOKEN: ${{ inputs.api_token }}
+        INPUT_KEY: ${{ inputs.key }}
+        INPUT_USERNAME: ${{ inputs.username }}
       run: |
-        [String]$apiToken = '${{ inputs.api_token }}';
-        [String]$key = '${{ inputs.key }}';
-        if (-not [String]::IsNullOrWhiteSpace($apiToken)) {
+        if (-not [String]::IsNullOrWhiteSpace($env:INPUT_API_TOKEN)) {
           [String]$kaggleTokenFile = [System.IO.Path]::Combine($HOME, '.kaggle', 'access_token');
-          New-Item -Path $kaggleTokenFile -Type File -Value $apiToken -Force | Out-Null;
+          New-Item -Path $kaggleTokenFile -Type File -Value $env:INPUT_API_TOKEN -Force | Out-Null;
           if ($IsLinux -or $IsMacOS) {
             chmod 600 $kaggleTokenFile;
           }
         }
-        elseif (-not [String]::IsNullOrWhiteSpace($key)) {
+        elseif (-not [String]::IsNullOrWhiteSpace($env:INPUT_KEY)) {
           Write-Warning -Message 'Using key input is not recommended. Please use api_token input instead. For more details, please refer to the action README.' | Out-Null;
           [String]$kaggleInfo = ConvertTo-Json -InputObject @{
-            'username' = '${{ inputs.username }}';
-            'key' = $key
+            'username' = $env:INPUT_USERNAME;
+            'key' = $env:INPUT_KEY
           };
           [String]$kaggleFile = [System.IO.Path]::Combine($HOME, '.kaggle', 'kaggle.json');
           New-Item -Path $kaggleFile -Type File -Value $kaggleInfo -Force | Out-Null;
@@ -85,6 +93,7 @@ runs:
         else {
           throw [System.ArgumentException]::new('At least one of api_token and key is required. Please set your kaggle API credentials via api_token or key input.');
         }
+
     - name: Resolve Kernel Slug
       shell: pwsh
       env:
@@ -101,6 +110,7 @@ runs:
           }
         }
         elseif ($slug -like '*/*') {
+          Warning -Message 'The id input should be the kernel slug, not the full kernel name. Extracting slug from the provided id.' | Out-Null;
           $slug = $slug.Split('/')[-1];
         }
         Write-Host -Object "Resolved kernel slug: $slug" -ForegroundColor Cyan | Out-Null;
@@ -110,46 +120,97 @@ runs:
       shell: pwsh
       env:
         INPUT_TITLE: ${{ inputs.title }}
+        INPUT_CODE_FILE: ${{ inputs.code_file }}
+        INPUT_LANGUAGE: ${{ inputs.language }}
+        INPUT_KERNEL_TYPE: ${{ inputs.kernel_type }}
+        INPUT_IS_PRIVATE: ${{ inputs.is_private }}
+        INPUT_ENABLE_GPU: ${{ inputs.enable_gpu }}
+        INPUT_ENABLE_TPU: ${{ inputs.enable_tpu }}
+        INPUT_ENABLE_INTERNET: ${{ inputs.enable_internet }}
+        INPUT_USERNAME: ${{ inputs.username }}
+        INPUT_DATASET_SOURCES: ${{ inputs.dataset_sources }}
+        INPUT_COMPETITION_SOURCES: ${{ inputs.competition_sources }}
+        INPUT_KERNEL_SOURCES: ${{ inputs.kernel_sources }}
+        INPUT_KEYWORDS: ${{ inputs.keywords }}
+        INPUT_MACHINE_SHAPE: ${{ inputs.machine_shape }}
+        INPUT_DOCKER_IMAGE: ${{ inputs.docker_image }}
+        INPUT_DOCKER_IMAGE_PINNING_TYPE: ${{ inputs.docker_image_pinning_type }}
+        INPUT_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
       run: |
         # location
-        Set-Location -Path '${{ github.action_path }}' | Out-Null;
-        [String]$actionPath = '${{ github.action_path }}';
+        Set-Location -Path $env:GITHUB_ACTION_PATH | Out-Null;
 
         # kaggle init
-        kaggle kernels init -p $actionPath;
+        kaggle kernels init -p $env:GITHUB_ACTION_PATH;
 
         # process metadata json
         [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
-        # $metadata[''] = '$#{{ inputs. }}';
-        $metadata['id'] = $metadata['id'].Split('/')[0] + '/' + $env:KAGGLE_KERNEL_SLUG;
+
+        $metadata['id'] = [String]::IsNullOrWhiteSpace($env:INPUT_USERNAME) ? ($metadata['id'].Split('/')[0] + '/' + $env:KAGGLE_KERNEL_SLUG) : ($env:INPUT_USERNAME + '/' + $env:KAGGLE_KERNEL_SLUG);
         $metadata['title'] = $env:INPUT_TITLE;
-        $metadata['code_file'] = [System.IO.Path]::Combine('${{ github.workspace }}', '${{ inputs.code_file }}');
-        $metadata['language'] = '${{ inputs.language }}';
-        $metadata['kernel_type'] = '${{ inputs.kernel_type }}';
-        $metadata['enable_gpu'] = '${{ inputs.enable_gpu }}' -in 'true', 'enable';
-        $metadata['enable_internet'] = '${{ inputs.enable_internet }}' -in 'true', 'enable';
-        [String]$machineShape = '${{ inputs.machine_shape }}';
-        if (-not [String]::IsNullOrWhiteSpace($machineShape))
-        {
-            $metadata['machine_shape'] = '${{ inputs.machine_shape }}';
+        $metadata['code_file'] = [System.IO.Path]::Combine($env:GITHUB_WORKSPACE, $env:INPUT_CODE_FILE);
+        $metadata['language'] = $env:INPUT_LANGUAGE;
+        $metadata['kernel_type'] = $env:INPUT_KERNEL_TYPE;
+        $metadata['is_private'] = $env:INPUT_IS_PRIVATE -in 'true', 'enable';
+        $metadata['enable_gpu'] = $env:INPUT_ENABLE_GPU -in 'true', 'enable';
+        $metadata['enable_tpu'] = $env:INPUT_ENABLE_TPU -in 'true', 'enable';
+        $metadata['enable_internet'] = $env:INPUT_ENABLE_INTERNET -in 'true', 'enable';
+        if (-not [String]::IsNullOrWhiteSpace($env:INPUT_DATASET_SOURCES)) {
+          [String[]]$datasetSources = $env:INPUT_DATASET_SOURCES -split '\r?\n' | ForEach-Object -Process { $_.Trim() } | Where-Object { -not [String]::IsNullOrWhiteSpace($_) };
+          $metadata['dataset_sources'] = $datasetSources;
+        }
+        if (-not [String]::IsNullOrWhiteSpace($env:INPUT_COMPETITION_SOURCES)) {
+          [String[]]$competitionSources = $env:INPUT_COMPETITION_SOURCES -split '\r?\n' | ForEach-Object -Process { $_.Trim() } | Where-Object { -not [String]::IsNullOrWhiteSpace($_) };
+          $metadata['competition_sources'] = $competitionSources;
+        }
+        if (-not [String]::IsNullOrWhiteSpace($env:INPUT_KERNEL_SOURCES)) {
+          [String[]]$kernelSources = $env:INPUT_KERNEL_SOURCES -split '\r?\n' | ForEach-Object -Process { $_.Trim() } | Where-Object { -not [String]::IsNullOrWhiteSpace($_) };
+          $metadata['kernel_sources'] = $kernelSources;
+        }
+        if (-not [String]::IsNullOrWhiteSpace($env:INPUT_KEYWORDS)) {
+          [String[]]$keywords = $env:INPUT_KEYWORDS -split '\r?\n' | ForEach-Object -Process { $_.Trim() } | Where-Object { -not [String]::IsNullOrWhiteSpace($_) };
+          $metadata['keywords'] = $keywords;
+        }
+        [String]$machineShape = $env:INPUT_MACHINE_SHAPE;
+        if (-not [String]::IsNullOrWhiteSpace($machineShape)) {
+            $metadata['machine_shape'] = $env:INPUT_MACHINE_SHAPE;
+        }
+        if (-not [String]::IsNullOrWhiteSpace($env:INPUT_DOCKER_IMAGE)) {
+          $metadata['docker_image'] = $env:INPUT_DOCKER_IMAGE;
+        }
+        if (-not [String]::IsNullOrWhiteSpace($env:INPUT_DOCKER_IMAGE_PINNING_TYPE)) {
+          $metadata['docker_image_pinning_type'] = $env:INPUT_DOCKER_IMAGE_PINNING_TYPE;
         }
 
         ConvertTo-Json -InputObject $metadata | Set-Content -Path $jsonPath | Out-Null;
 
         #kaggle push
-        kaggle kernels push;
+        if ([String]::IsNullOrWhiteSpace($env:INPUT_TIMEOUT_SECONDS)) {
+          kaggle kernels push;
+        }
+        else {
+          [Int32]$timeout = [Int32]::Parse($env:INPUT_TIMEOUT_SECONDS);
+          kaggle kernels push --timeout $timeout;
+        }
 
     - name: Check status
       shell: pwsh
+      env:
+        INPUT_USERNAME: ${{ inputs.username }}
+        INPUT_FETCH_TIME_SECONDS: ${{ inputs.fetch_time_seconds }}
       run: |
-        # location
-        Set-Location -Path '${{ github.action_path }}' | Out-Null;
-
+        Set-Location -Path $env:GITHUB_ACTION_PATH | Out-Null;
+        [Int32]$fetchTime = [Int32]::Parse($env:INPUT_FETCH_TIME_SECONDS);
+        [String]$logPath = [System.IO.Path]::Combine((Get-Location).Path, $env:KAGGLE_KERNEL_SLUG + '.log');
+        [String]$kernelFullName = [String]::IsNullOrWhiteSpace($env:INPUT_USERNAME) ? $env:KAGGLE_KERNEL_SLUG : "$env:INPUT_USERNAME/$env:KAGGLE_KERNEL_SLUG";
         # check status
         try {
           while ($true) {
-            [String]$status = (kaggle kernels status $env:KAGGLE_KERNEL_SLUG 2>&1) -join ' ';
+            [String]$status = (kaggle kernels status $kernelFullName 2>&1) -join ' ';
+            if ($LASTEXITCODE -ne 0) {
+              throw [System.Management.Automation.ApplicationFailedException]::new("Failed to get kernel status. kaggle CLI output: $status");
+            }
             Write-Host -Object "[$([DateTime]::Now.ToString('s'))] Current kernel status: $status" -ForegroundColor Cyan | Out-Null;
             # error
             if ($status -like '*error*') {
@@ -166,19 +227,23 @@ runs:
             }
             # running
             else {
-              Start-Sleep -Seconds 3 | Out-Null;
+              Start-Sleep -Seconds $fetchTime | Out-Null;
             }
           }
         }
         catch [System.Management.Automation.ApplicationFailedException], [OperationCanceledException]  {
           # write log
-          kaggle kernels output $env:KAGGLE_KERNEL_SLUG;
-          [String]$fullMessage = (Get-Content -Path ($env:KAGGLE_KERNEL_SLUG + '.log') -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
-          Write-Host -Object @"
+          kaggle kernels output $kernelFullName;
+          if (Test-Path -Path $logPath) {
+            [String]$fullMessage = (Get-Content -Path $logPath -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
+            Write-Host -Object @"
         ::group::Full log
         $fullMessage
         ::endgroup::
         "@ | Out-Null;
+          } else {
+            Write-Warning -Message "Log file not found at expected path: $logPath" | Out-Null;
+          }
           throw;
         }
 
