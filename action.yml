@@ -110,7 +110,7 @@ runs:
           }
         }
         elseif ($slug -like '*/*') {
-          Warning -Message 'The id input should be the kernel slug, not the full kernel name. Extracting slug from the provided id.' | Out-Null;
+          Write-Warning -Message 'The id input should be the kernel slug, not the full kernel name. Extracting slug from the provided id.' | Out-Null;
           $slug = $slug.Split('/')[-1];
         }
         Write-Host -Object "Resolved kernel slug: $slug" -ForegroundColor Cyan | Out-Null;
@@ -144,7 +144,7 @@ runs:
         kaggle kernels init -p $env:GITHUB_ACTION_PATH;
 
         # process metadata json
-        [String]$jsonPath = [System.IO.Path]::Combine($actionPath, 'kernel-metadata.json');
+        [String]$jsonPath = [System.IO.Path]::Combine($env:GITHUB_ACTION_PATH, 'kernel-metadata.json');
         [Hashtable]$metadata = Get-Content -Path $jsonPath -Raw | ConvertFrom-Json -AsHashtable;
 
         $metadata['id'] = [String]::IsNullOrWhiteSpace($env:INPUT_USERNAME) ? ($metadata['id'].Split('/')[0] + '/' + $env:KAGGLE_KERNEL_SLUG) : ($env:INPUT_USERNAME + '/' + $env:KAGGLE_KERNEL_SLUG);
@@ -235,7 +235,8 @@ runs:
           # write log
           kaggle kernels output $kernelFullName;
           if (Test-Path -Path $logPath) {
-            [String]$fullMessage = (Get-Content -Path $logPath -Raw | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
+            # NDJSON
+            [String]$fullMessage = (Get-Content -Path $logPath | ConvertFrom-Json -AsHashtable | ForEach-Object -Process { $_['data'] }) -join '';
             Write-Host -Object @"
         ::group::Full log
         $fullMessage
