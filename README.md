@@ -44,7 +44,7 @@ For free users, kaggle will provide more than 30 hours of GPU usage per week, wh
         - name: Checkout repository
           uses: actions/checkout@v3
         - name: Run kaggle
-          uses: Frederisk/kaggle-action@v1.0.0
+          uses: Frederisk/kaggle-action@v2
           with:
             api_token: ${{ secrets.KAGGLE_API_TOKEN }}
             # or legacy API credentials
